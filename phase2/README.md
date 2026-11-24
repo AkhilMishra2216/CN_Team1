@@ -13,8 +13,8 @@ dnsmasq on Mac 1). Run order: **A → C → D → E setup → B + E → F**.
 | --- | --- | --- | --- |
 | Mac 1 | Harshita | 10.7.18.129 | Primary DNS, TTL / cutover client |
 | Mac 2 | Yashi | 10.7.31.128 | Primary edge (nginx) |
-| Mac 3 | Manan | 10.7.10.192 | Backend A, **backup DNS**, **standby edge** |
-| Mac 4 | Akhil | 10.7.12.3 | Backend B, main test client |
+| Mac 3 | Manan | 10.7.10.192 | Backend A, **backup DNS** |
+| Mac 4 | Akhil | 10.7.12.3 | Backend B, main test client, **standby edge** |
 
 ## Layout
 
@@ -22,8 +22,8 @@ dnsmasq on Mac 1). Run order: **A → C → D → E setup → B + E → F**.
 | --- | --- |
 | `config/backup-dnsmasq.conf` | Backup resolver on Mac 3, same records as Mac 1 |
 | `config/pf-backend.conf` | Backend isolation rules for Mac 3 and Mac 4 |
-| `config/standby-edge.conf` | Standby nginx edge on Mac 3 |
-| `standby-certificate.md` | Standby certificate: key on Mac 3, signed by the team CA on Mac 2 |
+| `config/standby-edge.conf` | Standby nginx edge on Mac 4 |
+| `standby-certificate.md` | Phase 2 edge certificate (mkcert) and how the standby got it |
 | `scripts/lb-loop.sh` | Client loop: status code and backend once per second (Ext D) |
 | `scripts/watch-edge.sh` | Client loop: resolver answer and answering edge every 3 s (Ext B, E) |
 | `scripts/capture.sh` | Runs one test step and saves its real output with timestamps |
@@ -111,18 +111,20 @@ Backend A tab, later `./phase1/backend/run-backend-a.sh`. **Mac 2**:
 | nginx logs `connect() failed (61: Connection refused)` for upstream 10.7.10.192:3001 | Mac 2 | `D-Backend-Failover/nginx-error-log-mac2.jpg` | captured |
 | Full run: baseline, A stopped (10/10 served by B), A restarted and back in rotation | Mac 3 | `D-Backend-Failover/failover-and-recovery-mac3.txt` | captured |
 
-## Ext E setup · Standby edge on Mac 3
+## Ext E setup · Standby edge on Mac 4
 
-Do this after the Ext C rollback (the firewall only allows Mac 2).
-Certificate first: [standby-certificate.md](standby-certificate.md). Then on **Mac 3**:
+Do this after the Ext C rollback (the firewall only allows Mac 2, so Mac 3
+would refuse the standby's connections to Backend A). Mac 4 needs
+`team1.pem` and `team1-key.pem` from Mac 2 in `~/cn/certs`
+([standby-certificate.md](standby-certificate.md)). Then on **Mac 4**:
 
 ```bash
-cp phase2/config/standby-edge.conf /opt/homebrew/etc/nginx/servers/team1-standby.conf
+sed "s#CERT_DIR#$HOME/cn/certs#g" phase2/config/standby-edge.conf > /opt/homebrew/etc/nginx/servers/team1-standby.conf
 sudo nginx -t && sudo nginx
-curl -sI --cacert ~/cn/rootCA.pem --resolve app.team1.test:443:10.7.10.192 https://app.team1.test/api/status | grep -i x-edge
+curl -sI --cacert ~/cn/rootCA.pem --resolve app.team1.test:443:10.7.12.3 https://app.team1.test/api/status | grep -i x-edge
 ```
 
-Expected: `x-edge: mac3-standby`.
+Expected: `x-edge: mac4`.
 
 ## Ext B + E · TTL, record change, edge cutover
 
@@ -130,24 +132,24 @@ Expected: `x-edge: mac3-standby`.
 2. **Mac 1**: new tab, `./phase2/scripts/watch-edge.sh`. It prints the OS resolver's answer and the `x-edge` header every 3 s.
 3. **Mac 1**: point the name at the standby, then restart dnsmasq:
    ```bash
-   sed -i '' 's/^host-record=app.team1.test,.*/host-record=app.team1.test,10.7.10.192/' /opt/homebrew/etc/dnsmasq.conf
+   sed -i '' 's/^host-record=app.team1.test,.*/host-record=app.team1.test,10.7.12.3/' /opt/homebrew/etc/dnsmasq.conf
    grep host-record /opt/homebrew/etc/dnsmasq.conf
    sudo brew services restart dnsmasq
    ```
    **Mac 3**: same `sed` on the backup, Ctrl+C and start dnsmasq again.
-4. **Mac 1**: the loop keeps the old edge until the cached answer expires (≤ 30 s), then switches. At the same moment `dig +short app.team1.test` already shows `10.7.10.192`, while `dscacheutil -q host -a name app.team1.test` still shows the old IP.
-5. **Mac 4**: flush, then `curl -sI --cacert ~/cn/rootCA.pem https://app.team1.test/api/status | grep -i x-edge` shows `mac3-standby` at once.
+4. **Mac 1**: the loop keeps the old edge until the cached answer expires (≤ 30 s), then switches. At the same moment `dig +short app.team1.test` already shows `10.7.12.3`, while `dscacheutil -q host -a name app.team1.test` still shows the old IP.
+5. **Mac 3**: flush, then `curl -sI --cacert ~/cn/rootCA.pem https://app.team1.test/api/status | grep -i x-edge` shows `mac4` at once.
 6. **Mac 1 and Mac 3**: put the record back to `10.7.31.128` and restart. **Mac 1**: `sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder`, and the loop switches back immediately.
 
 | Step | Where | Evidence | Status |
 | --- | --- | --- | --- |
 | TTL 30 on the answer | Mac 1 | `B-TTL/ttl-30-mac1.jpg` | captured |
 | Primary edge answering before cutover (`x-edge: mac2`) | Mac 1 | `E-Edge-Migration/primary-edge-header-mac1.png` | captured |
-| Standby ready (`x-edge: mac3-standby`) | Mac 3 | `E-Edge-Migration/standby-preflight-mac3.jpg` | to capture |
-| Record changed on both resolvers | Mac 1, Mac 3 | `E-Edge-Migration/dns-cutover-mac1.jpg` | to capture |
+| After the cutover: primary DNS → 10.7.12.3, client served by `x-edge: mac4` with A and B; both edges present the same certificate | Mac 3 | `E-Edge-Migration/cutover-state-mac3.txt` | captured |
+| Record changed on both resolvers (at 19:01 only the primary was changed) | Mac 1, Mac 3 | `E-Edge-Migration/dns-cutover-mac1.jpg` | to capture |
 | Timestamped loop: old edge until TTL expiry, then standby | Mac 1 | `B-TTL/automatic-expiry-mac1.jpg` | to capture |
 | `dig` new IP vs. OS cache old IP | Mac 1 | `B-TTL/dig-vs-os-cache-mac1.jpg` | to capture |
-| Fresh client reaches the standby at once | Mac 4 | `E-Edge-Migration/fresh-standby-mac4.jpg` | to capture |
+| Fresh client reaches the standby at once (after a flush) | Mac 3 | `E-Edge-Migration/fresh-standby-mac3.jpg` | to capture |
 | Rollback + manual flush switches back immediately | Mac 1 | `B-TTL/manual-flush-mac1.jpg` | to capture |
 
 ## Ext F · Faculty-injected fault

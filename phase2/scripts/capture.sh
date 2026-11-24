@@ -5,7 +5,7 @@
 # Steps are listed with:       ./phase2/scripts/capture.sh help
 set -u
 
-PRIMARY=10.7.18.129; BACKUP=10.7.10.192; EDGE=10.7.31.128; STANDBY=10.7.10.192
+PRIMARY=10.7.18.129; BACKUP=10.7.10.192; EDGE=10.7.31.128; STANDBY=10.7.12.3
 NAME=app.team1.test
 CA="${CA:-$HOME/cn/rootCA.pem}"; [ -f "$CA" ] || CA="$HOME/team1-rootCA.pem"
 CONF=/opt/homebrew/etc/dnsmasq.conf

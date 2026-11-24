@@ -1,0 +1,57 @@
+Mac 3 (Manan, 10.7.10.192) - Phase 2 Ext E: standby edge on Mac 4, state after the DNS cutover
+Captured Tue 24 Nov 2026 19:01:09 IST on Mac 3 (a client during the cutover)
+
+[19:01:09] manangilhotra010@Manans-MacBook-Pro-2 ~ % dig @10.7.18.129 app.team1.test +noall +answer
+
+; <<>> DiG 9.10.6 <<>> @10.7.18.129 app.team1.test +noall +answer
+; (1 server found)
+;; global options: +cmd
+app.team1.test.		30	IN	A	10.7.12.3
+
+[19:01:09] manangilhotra010@Manans-MacBook-Pro-2 ~ % dig @10.7.10.192 app.team1.test +noall +answer
+
+; <<>> DiG 9.10.6 <<>> @10.7.10.192 app.team1.test +noall +answer
+; (1 server found)
+;; global options: +cmd
+app.team1.test.		30	IN	A	10.7.31.128
+
+[19:01:09] manangilhotra010@Manans-MacBook-Pro-2 ~ % sudo -n true 2>/dev/null || echo '(no OS cache flush: sudo needs a password; dscacheutil shows the current OS answer)'; dscacheutil -q host -a name app.team1.test | grep ip_address
+(no OS cache flush: sudo needs a password; dscacheutil shows the current OS answer)
+ip_address: 10.7.12.3
+
+[19:01:09] manangilhotra010@Manans-MacBook-Pro-2 ~ % curl -sI --cacert ~/cn/rootCA.pem https://app.team1.test/api/status | grep -iE '^HTTP|x-backend|x-edge'
+HTTP/2 200 
+x-backend: B
+x-edge: mac4
+
+[19:01:10] manangilhotra010@Manans-MacBook-Pro-2 ~ % curl -sI --cacert ~/cn/rootCA.pem https://app.team1.test/api/status | grep -iE '^HTTP|x-backend|x-edge'
+HTTP/2 200 
+x-backend: A
+x-edge: mac4
+
+[19:01:10] manangilhotra010@Manans-MacBook-Pro-2 ~ % curl -sI --cacert ~/cn/rootCA.pem https://app.team1.test/api/status | grep -iE '^HTTP|x-backend|x-edge'
+HTTP/2 200 
+x-backend: B
+x-edge: mac4
+
+[19:01:10] manangilhotra010@Manans-MacBook-Pro-2 ~ % curl -sI --cacert ~/cn/rootCA.pem https://app.team1.test/api/status | grep -iE '^HTTP|x-backend|x-edge'
+HTTP/2 200 
+x-backend: A
+x-edge: mac4
+
+[19:01:11] manangilhotra010@Manans-MacBook-Pro-2 ~ % echo | openssl s_client -connect 10.7.31.128:443 -servername app.team1.test 2>/dev/null | openssl x509 -noout -fingerprint -sha256 -issuer
+sha256 Fingerprint=17:DA:59:37:74:02:20:2E:B3:53:F9:3D:D0:49:5F:5E:34:5F:6E:CD:E9:F2:53:29:D8:FC:69:D2:62:F0:C4:51
+issuer=O=mkcert development CA, OU=yashiagarwal@Yashis-MacBook-Pro-2.local (Yashi Agarwal), CN=mkcert yashiagarwal@Yashis-MacBook-Pro-2.local (Yashi Agarwal)
+
+[19:01:11] manangilhotra010@Manans-MacBook-Pro-2 ~ % curl -sI --resolve app.team1.test:443:10.7.31.128 --cacert ~/cn/rootCA.pem https://app.team1.test/api/status | grep -iE '^HTTP|x-edge'
+HTTP/2 200 
+x-edge: mac2
+
+[19:01:11] manangilhotra010@Manans-MacBook-Pro-2 ~ % echo | openssl s_client -connect 10.7.12.3:443 -servername app.team1.test 2>/dev/null | openssl x509 -noout -fingerprint -sha256 -issuer
+sha256 Fingerprint=17:DA:59:37:74:02:20:2E:B3:53:F9:3D:D0:49:5F:5E:34:5F:6E:CD:E9:F2:53:29:D8:FC:69:D2:62:F0:C4:51
+issuer=O=mkcert development CA, OU=yashiagarwal@Yashis-MacBook-Pro-2.local (Yashi Agarwal), CN=mkcert yashiagarwal@Yashis-MacBook-Pro-2.local (Yashi Agarwal)
+
+[19:01:11] manangilhotra010@Manans-MacBook-Pro-2 ~ % curl -sI --resolve app.team1.test:443:10.7.12.3 --cacert ~/cn/rootCA.pem https://app.team1.test/api/status | grep -iE '^HTTP|x-edge'
+HTTP/2 200 
+x-edge: mac4
+

@@ -74,9 +74,9 @@ Mac 2 10.7.31.128, Mac 3 10.7.10.192, Mac 4 10.7.12.3.
 | File | Mac | What it shows | Status |
 | --- | --- | --- | --- |
 | [`primary-edge-header-mac1.png`](Phase-2/E-Edge-Migration/primary-edge-header-mac1.png) | Mac 1 | Before cutover: `HTTP/2 200`, `x-edge: mac2`, `x-backend: A` | captured |
-| `standby-preflight-mac3.jpg` | Mac 3 | Standby answers with `x-edge: mac3-standby` | to capture |
-| `dns-cutover-mac1.jpg` | Mac 1, Mac 3 | Record moved to 10.7.10.192 on both resolvers | to capture |
-| `fresh-standby-mac4.jpg` | Mac 4 | Fresh client reaches the standby at once | to capture |
+| [`cutover-state-mac3.txt`](Phase-2/E-Edge-Migration/cutover-state-mac3.txt) | Mac 3 | 19:01, after the cutover: primary DNS answers 10.7.12.3 (backup still 10.7.31.128); Mac 3's OS resolver has 10.7.12.3; four requests return 200 with `x-edge: mac4`, backends B, A, B, A; both edges present the same mkcert certificate (SHA-256 `17:DA:59:…:C4:51`) | captured |
+| `dns-cutover-mac1.jpg` | Mac 1, Mac 3 | Record moved to 10.7.12.3 on both resolvers | to capture |
+| `fresh-standby-mac3.jpg` | Mac 3 | Fresh client reaches the standby at once | to capture |
 
 ### F · Troubleshooting
 

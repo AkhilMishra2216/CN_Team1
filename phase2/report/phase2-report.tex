@@ -82,8 +82,8 @@ Host & IPv4 & Role (Phase 2 additions in italics)\\
 \midrule
 Mac 1 & 10.7.18.129 & Primary DNS (dnsmasq), client; \emph{TTL/cutover client}\\
 Mac 2 & 10.7.31.128 & Edge: nginx reverse proxy, TLS, load balancer\\
-Mac 3 & 10.7.10.192 & Backend A :3001; \emph{backup DNS, standby edge, firewall}\\
-Mac 4 & 10.7.12.3 & Backend B :3002, main client; \emph{firewall}\\
+Mac 3 & 10.7.10.192 & Backend A :3001; \emph{backup DNS, firewall}\\
+Mac 4 & 10.7.12.3 & Backend B :3002, main client; \emph{standby edge, firewall}\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -145,7 +145,7 @@ A & Backup resolver, same records & dnsmasq on Mac 3; both clients list Mac 1, t
 B & Record change observed under a 30\,s TTL & Mac 1, Mac 3\\
 C & Backend ports open to the edges only & \code{pf} anchor on Mac 3 and Mac 4\\
 D & Passive health checks & nginx upstream on Mac 2\\
-E & Standby edge and DNS cutover & nginx on Mac 3, own key\\
+E & Standby edge and DNS cutover & nginx on Mac 4, same certificate\\
 F & Layered diagnosis procedure & Client (Mac 4)\\
 \bottomrule
 \end{tabular}
@@ -162,7 +162,7 @@ F & Layered diagnosis procedure & Client (Mac 4)\\
 \node[box, right=2.4cm of client, yshift=1.4cm] (dns1) {\textbf{Mac 1: primary DNS}\\dnsmasq, TTL 30\,s};
 \node[dbox, right=1.2cm of dns1] (dns3) {\textbf{Mac 3: backup DNS}\\same records (Ext A)};
 \node[box, right=2.4cm of client, yshift=-0.6cm, line width=1.2pt] (edge2) {\textbf{Mac 2: edge}\\nginx, TLS, round robin};
-\node[dbox, below=0.6cm of edge2] (edge3) {\textbf{Mac 3: standby edge}\\cutover target (Ext E)};
+\node[dbox, below=0.6cm of edge2] (edge3) {\textbf{Mac 4: standby edge}\\cutover target (Ext E)};
 \node[box, right=2.2cm of edge2, yshift=0.55cm] (ba) {\textbf{Backend A}\\Mac 3 :3001};
 \node[box, right=2.2cm of edge2, yshift=-1.0cm] (bb) {\textbf{Backend B}\\Mac 4 :3002};
 \node[font=\scriptsize, align=center, below=0.15cm of bb] (fw) {pf on Mac 3 and Mac 4: only Mac 2 may connect (Ext C)};
@@ -222,13 +222,15 @@ the same request on the other backend, so the client sees no error.
 rather than refusing.
 
 \subsection{Ext E: standby edge and DNS-based cutover}
-Mac 3 runs a second nginx with the same backend pool and TLS settings. It
-does not reuse Mac 2's private key: Mac 3 generates its own key and a
-certificate signing request, and the team root CA on Mac 2 signs it.
-Clients already trust that CA, so no client change is needed. The standby
-adds \code{X-Edge: mac3-standby} (the primary sends \code{mac2}), so
-every response shows which edge served it. Cutover is a single record
-change from 10.7.31.128 to 10.7.10.192 on both resolvers.
+Mac 4 runs a second nginx with the same backend pool and TLS settings.
+In Phase 2 both edges serve one certificate issued by an mkcert CA on
+Mac 2, which every client already trusts, so no client change is needed.
+The standby received the certificate and its key from Mac 2. This was
+quick but places one private key on two hosts; a separate key signed by
+the same CA would avoid that without any client change. The standby adds
+\code{X-Edge: mac4} (the primary sends \code{mac2}), so every response
+shows which edge served it. Cutover is a record change from 10.7.31.128 to
+10.7.12.3 on both resolvers.
 
 \subsection{Ext F: diagnosis procedure}
 For an unknown fault we test one layer at a time from the client and
@@ -312,10 +314,32 @@ again at 18:59:21, 6\,s later, within the 10\,s \code{fail_timeout} after
 which nginx retries a failed upstream; from then on A and B alternated.
 
 \subsection{Ext E}
-Before the cutover, responses on Mac 1 carry \code{x-edge: mac2} with
-\code{HTTP/2 200}. \pending{standby ready with \code{x-edge: mac3-standby};
-cached client kept reaching Mac 2 for N\,s after the change; fresh client
-reached Mac 3 at once; rollback}.
+Before the cutover, responses on Mac 1 carried \code{x-edge: mac2}. At
+19:01, after the record on the primary resolver was changed, Mac 3
+recorded the state in Table~\ref{tab:cut}. Clients resolving through the
+primary reached the standby, which balanced across both backends, while
+the old edge still answered when addressed directly. The backup resolver
+had not been changed: a client falling back to it during the cutover
+would have been sent to the old edge, so a cutover must update every
+resolver. \pending{backup resolver updated; timestamped cached versus
+fresh client inside the TTL window; rollback to Mac 2}.
+
+\begin{table}[t]
+\caption{Ext E: State After the Cutover (19:01, Mac 3)}\label{tab:cut}
+\centering\footnotesize
+\begin{tabular}{@{}p{2.6cm} p{4.9cm}@{}}
+\toprule
+Check & Result\\
+\midrule
+Primary DNS (Mac 1) & \code{app.team1.test} $\to$ 10.7.12.3, TTL 30\\
+Backup DNS (Mac 3) & 10.7.31.128 (not yet changed)\\
+Mac 3 OS resolver & 10.7.12.3\\
+4 requests by name & 200 each, \code{x-edge: mac4}, backends B, A, B, A\\
+Mac 2 addressed directly & 200, \code{x-edge: mac2}\\
+Certificates & identical on both edges (SHA-256 \code{17:DA:59...C4:51}), mkcert CA\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Ext F}
 \pending{fault injected by faculty; layer at which the first check
@@ -403,8 +427,8 @@ without touching the application.
 backend failure into extra latency rather than an error, as long as one
 healthy backend remains.
 
-\textbf{Ext E.} Moving an edge needs the same trust (a certificate from
-the same CA), the same pool, and a DNS change; existing clients follow
+\textbf{Ext E.} Moving an edge needs a certificate clients already trust,
+the same pool, and a DNS change on every resolver; existing clients follow
 only after their cached answer expires.
 
 \textbf{Ext F.} Checking layers in order, and noting whether a failure is

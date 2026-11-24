@@ -32,7 +32,7 @@ CN_Team1/
 │   ├── config/                      # backup-dnsmasq.conf, standby-edge.conf, pf-backend.conf
 │   ├── scripts/                     # lb-loop.sh, watch-edge.sh
 │   ├── report/                      # Phase 2 report, IEEE format (LaTeX + PDF)
-│   ├── standby-certificate.md       # Standby edge certificate via the team CA
+│   ├── standby-certificate.md       # Phase 2 edge certificate (mkcert) notes
 │   ├── REPORT.md                    # Phase 2 results summary
 │   └── README.md                    # Phase 2 runbook, step by step
 │
@@ -62,8 +62,8 @@ CN_Team1/
 | --- | --- | --- | --- | --- | --- |
 | **Mac 1** | Harshita | `10.7.18.129` | Primary DNS + test client | TTL / cutover client | dnsmasq, 53 UDP/TCP |
 | **Mac 2** | Yashi | `10.7.31.128` | Edge: reverse proxy, TLS, load balancer | - | nginx, 80 / 443 |
-| **Mac 3** | Manan | `10.7.10.192` | Backend A | Backup DNS, standby edge, backend firewall | Python 3001, dnsmasq 53, nginx 443 |
-| **Mac 4** | Akhil | `10.7.12.3` | Backend B + main test client | Backend firewall | Python 3002 |
+| **Mac 3** | Manan | `10.7.10.192` | Backend A | Backup DNS, backend firewall | Python 3001, dnsmasq 53 |
+| **Mac 4** | Akhil | `10.7.12.3` | Backend B + main test client | Standby edge, backend firewall | Python 3002, nginx 443 |
 
 Network `10.7.0.0/19`, gateway `10.7.0.1`, domain `team1.test`
 (`app.team1.test`, `api.team1.test`, TTL 30 s). Addresses come from the
@@ -77,7 +77,7 @@ lab DHCP server; the Phase 1 evidence used earlier ones, listed in
 ```
 Client --DNS, UDP 53------> Mac 1 dnsmasq        (fallback: Mac 3 dnsmasq)
        <-- 10.7.31.128, TTL 30
-Client --HTTPS, TCP 443---> Mac 2 nginx, TLS ends here    (standby: Mac 3 nginx)
+Client --HTTPS, TCP 443---> Mac 2 nginx, TLS ends here    (standby: Mac 4 nginx)
                               |--plain HTTP--> Mac 3  Backend A :3001
                               |--plain HTTP--> Mac 4  Backend B :3002
                               pf on Mac 3 + Mac 4: only Mac 2 may open 3001/3002
@@ -101,7 +101,7 @@ done. Results and evidence links: [`phase1/README.md`](phase1/README.md#results-
 | B · TTL | 30 s TTL observed through a record change | [`team-dnsmasq.conf`](phase1/dns/team-dnsmasq.conf) | [`B-TTL`](evidence/Phase-2/B-TTL) | TTL shown; change + flush still to run |
 | C · Isolation | Only the edge may reach ports 3001/3002 | [`pf-backend.conf`](phase2/config/pf-backend.conf) | [`C-Isolation`](evidence/Phase-2/C-Isolation) | Complete, including rollback |
 | D · Backend failover | nginx passive health checks + retry | [`nginx.conf`](phase1/nginx/nginx.conf) | [`D-Backend-Failover`](evidence/Phase-2/D-Backend-Failover) | Complete |
-| E · Edge migration | Standby nginx on Mac 3 + DNS cutover | [`standby-edge.conf`](phase2/config/standby-edge.conf) | [`E-Edge-Migration`](evidence/Phase-2/E-Edge-Migration) | Baseline only; cutover still to run |
+| E · Edge migration | Standby nginx on Mac 4 + DNS cutover | [`standby-edge.conf`](phase2/config/standby-edge.conf) | [`E-Edge-Migration`](evidence/Phase-2/E-Edge-Migration) | Cutover to Mac 4 shown; TTL window and rollback still to run |
 | F · Troubleshooting | Layered diagnosis of a faculty-injected fault | [runbook](phase2/README.md#ext-f--faculty-injected-fault) | [`F-Troubleshooting`](evidence/Phase-2/F-Troubleshooting) | At evaluation |
 
 - [Phase 2 runbook](phase2/README.md): every command, by Mac, in run order
@@ -116,12 +116,15 @@ done. Results and evidence links: [`phase1/README.md`](phase1/README.md#results-
 | --- | --- | --- |
 | Mac 1 | `cp phase1/dns/team-dnsmasq.conf /opt/homebrew/etc/dnsmasq.conf && sudo brew services start dnsmasq` | - |
 | Mac 2 | `cp phase1/nginx/nginx.conf /opt/homebrew/etc/nginx/servers/team1.conf && sudo nginx -t && sudo nginx` | - |
-| Mac 3 | `./phase1/backend/run-backend-a.sh` | Backup DNS and standby edge: [runbook](phase2/README.md) |
-| Mac 4 | `./phase1/backend/run-backend-b.sh` | - |
+| Mac 3 | `./phase1/backend/run-backend-a.sh` | Backup DNS: [runbook](phase2/README.md#ext-a--backup-dns-resolver) |
+| Mac 4 | `./phase1/backend/run-backend-b.sh` | Standby edge: [runbook](phase2/README.md#ext-e-setup--standby-edge-on-mac-4) |
 | Clients | `sudo networksetup -setdnsservers Wi-Fi 10.7.18.129 10.7.10.192` | `./phase2/scripts/lb-loop.sh`, `./phase2/scripts/watch-edge.sh` |
 
 ## Security note
 
-Private keys (`*.key`) are excluded by `.gitignore`. The root CA key and
-the primary edge key stay on Mac 2; the standby edge key is generated on
-Mac 3 and never copied. Only the public root CA certificate goes to clients.
+Private keys (`*.key`, `*-key.pem`) are never committed. Phase 1 used the
+team's own OpenSSL root CA, whose key stays on Mac 2. In Phase 2 both edges
+serve one mkcert certificate from Mac 2; its key was copied to the standby
+on Mac 4, a trade-off explained in
+[`phase2/standby-certificate.md`](phase2/standby-certificate.md). Clients only
+ever receive the public root CA certificate.

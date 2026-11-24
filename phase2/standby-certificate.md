@@ -1,43 +1,41 @@
-# Standby edge certificate (Phase 2, Ext E)
+# Edge certificates in Phase 2 (Ext E)
 
-The standby edge on Mac 3 needs a certificate for `app.team1.test`.
-Copying Mac 2's server key would put the same private key on two machines,
-so instead Mac 3 makes its **own** key and asks the Team 1 root CA (on
-Mac 2) to sign it. The CA key never leaves Mac 2 and the standby key never
-leaves Mac 3; only the CSR and the signed certificate travel (both public).
+In Phase 2 both edges serve one certificate for `app.team1.test` and
+`api.team1.test`, issued by Yashi's **mkcert** CA on Mac 2. Every client
+trusts that CA's public root (`~/cn/rootCA.pem`; also added to the System
+keychain), so validation stays on: `curl --cacert ~/cn/rootCA.pem`, never `-k`.
 
-## 1. Mac 3: key + signing request
+## What we did
 
-```bash
-mkdir -p ~/team1-standby && cd ~/team1-standby
-openssl genrsa -out standby.app.team1.test.key 2048
-openssl req -new -key standby.app.team1.test.key -out standby.app.team1.test.csr \
-  -subj "/C=IN/O=Team1 CN Project/CN=app.team1.test"
-```
+1. **Mac 2** issued the certificate with mkcert:
+   ```bash
+   mkcert -install
+   mkcert -cert-file team1.pem -key-file team1-key.pem app.team1.test api.team1.test
+   cp "$(mkcert -CAROOT)/rootCA.pem" .
+   ```
+2. **Clients** copied `rootCA.pem` to `~/cn/rootCA.pem` and trusted it:
+   ```bash
+   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ~/cn/rootCA.pem
+   ```
+3. **Mac 4** (standby edge) received `team1.pem` and `team1-key.pem` from Mac 2
+   and serves them unchanged.
 
-AirDrop `standby.app.team1.test.csr` to Mac 2.
+## Verified
 
-## 2. Mac 2: sign it with the Team 1 root CA
-
-```bash
-cd ~/team1-certs
-openssl x509 -req -in ~/Downloads/standby.app.team1.test.csr \
-  -CA team1-rootCA.pem -CAkey team1-rootCA.key -CAcreateserial \
-  -out standby.app.team1.test.crt -days 365 -sha256 \
-  -extfile openssl-san.cnf      # phase1/tls/openssl-san.cnf in this repo
-openssl verify -CAfile team1-rootCA.pem standby.app.team1.test.crt
-# standby.app.team1.test.crt: OK
-```
-
-AirDrop `standby.app.team1.test.crt` back to Mac 3.
-
-## 3. Mac 3: install for nginx
+Both edges present the same certificate (captured on Mac 3 at 19:01,
+[`cutover-state-mac3.txt`](../evidence/Phase-2/E-Edge-Migration/cutover-state-mac3.txt)):
 
 ```bash
-mkdir -p /opt/homebrew/etc/nginx/certs
-cp ~/team1-standby/standby.app.team1.test.key /opt/homebrew/etc/nginx/certs/
-cp ~/Downloads/standby.app.team1.test.crt /opt/homebrew/etc/nginx/certs/
+echo | openssl s_client -connect 10.7.31.128:443 -servername app.team1.test 2>/dev/null | openssl x509 -noout -fingerprint -sha256 -issuer
+echo | openssl s_client -connect 10.7.12.3:443   -servername app.team1.test 2>/dev/null | openssl x509 -noout -fingerprint -sha256 -issuer
+# both: sha256 Fingerprint=17:DA:59:37:...:C4:51, issuer=O=mkcert development CA ...
 ```
 
-Clients need nothing new: they already trust the Team 1 root CA, which
-signed both edge certificates.
+## Trade-off
+
+Copying the key was the fastest way to give the standby a trusted
+certificate, but it puts one private key on two machines: if either Mac is
+compromised, both edges are. The cleaner design is for Mac 4 to generate
+its own key and a signing request, and for the same CA to sign it. Clients
+would trust it without any change, because they trust the CA rather than a
+particular certificate.

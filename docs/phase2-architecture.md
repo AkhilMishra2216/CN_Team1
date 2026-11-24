@@ -12,7 +12,7 @@ Client (Mac 4, Mac 1) ─────────────► Mac 1 primary d
         ├──────────────► Mac 2 edge nginx (X-Edge: mac2) ──┬─ HTTP ─► Mac 3 Backend A :3001
         │                                                  └─ HTTP ─► Mac 4 Backend B :3002
         ┊ after DNS cutover (Ext E)                            ▲
-        └┄┄┄┄┄┄┄┄┄┄┄┄► Mac 3 standby nginx (X-Edge: mac3-standby) ┘
+        └┄┄┄┄┄┄┄┄┄┄┄┄► Mac 4 standby nginx (X-Edge: mac4) ┘
                         pf on Mac 3 and Mac 4: only Mac 2 may open 3001/3002 (Ext C)
 ```
 
@@ -21,7 +21,7 @@ Client (Mac 4, Mac 1) ─────────────► Mac 1 primary d
 | Primary DNS (Mac 1) | Names stop resolving | Clients fall back to Mac 3 (second resolver in their list) |
 | One backend | nginx already retried in Phase 1 | Same, now shown live with the error log (Ext D) |
 | Direct client access to a backend | Possible: backends listen on 0.0.0.0 | Refused by pf; only the edge is allowed (Ext C) |
-| Edge (Mac 2) | Service down | Record moved to the standby on Mac 3; cached clients follow within one TTL (Ext E) |
+| Edge (Mac 2) | Service down | Record moved to the standby on Mac 4; cached clients follow within one TTL (Ext E) |
 
 ## Packet behaviour worth pointing at
 
