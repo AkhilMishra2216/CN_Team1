@@ -1,0 +1,39 @@
+Mac 3 (Manan, 10.7.10.192) - Phase 2 Ext A: backup DNS resolver
+Captured Tue 24 Nov 2026 18:42:38 IST by running the commands below on Mac 3
+
+manangilhotra010@Manans-MacBook-Pro-2 ~ % pgrep -fl dnsmasq
+29979 sudo /opt/homebrew/sbin/dnsmasq -d -C /opt/homebrew/etc/dnsmasq.conf
+29980 sudo /opt/homebrew/sbin/dnsmasq -d -C /opt/homebrew/etc/dnsmasq.conf
+29981 /opt/homebrew/sbin/dnsmasq -d -C /opt/homebrew/etc/dnsmasq.conf
+
+manangilhotra010@Manans-MacBook-Pro-2 ~ % grep -vE '^#|^$' /opt/homebrew/etc/dnsmasq.conf
+listen-address=127.0.0.1,10.7.10.192
+bind-interfaces
+no-resolv
+server=8.8.8.8
+server=1.1.1.1
+local-ttl=30
+host-record=app.team1.test,10.7.31.128
+host-record=api.team1.test,10.7.31.128
+log-queries
+
+manangilhotra010@Manans-MacBook-Pro-2 ~ % /usr/libexec/ApplicationFirewall/socketfilterfw --listapps | grep -A1 dnsmasq
+1 : /opt/homebrew/Cellar/dnsmasq/2.93/sbin/dnsmasq 
+             (Allow incoming connections)
+
+manangilhotra010@Manans-MacBook-Pro-2 ~ % dig @10.7.10.192 app.team1.test +noall +answer +stats | grep -E 'IN|SERVER|Query time'
+app.team1.test.		30	IN	A	10.7.31.128
+;; Query time: 3 msec
+;; SERVER: 10.7.10.192#53(10.7.10.192)
+
+manangilhotra010@Manans-MacBook-Pro-2 ~ % dig @10.7.10.192 api.team1.test +short
+10.7.31.128
+
+manangilhotra010@Manans-MacBook-Pro-2 ~ % dig @10.7.10.192 example.com +short | head -2
+104.20.23.154
+172.66.147.243
+
+manangilhotra010@Manans-MacBook-Pro-2 ~ % networksetup -getdnsservers Wi-Fi
+10.7.18.129
+10.7.10.192
+
