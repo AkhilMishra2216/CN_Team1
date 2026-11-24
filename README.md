@@ -14,10 +14,10 @@ project.
 
 | Mac | Role | Team member | IP | Service |
 | --- | --- | --- | --- | --- |
-| Mac 1 | Private DNS server + test client | Harshita | 10.7.24.11 | dnsmasq, port 53 |
-| Mac 2 | Edge reverse proxy + load balancer (TLS) | Yashi | 10.7.21.240 | nginx, ports 80 / 443 |
-| Mac 3 | Backend A | Manan | 10.7.22.147 | Python REST API, port 3001 |
-| Mac 4 | Backend B + main test client | Akhil | 10.7.19.69 | Python REST API, port 3002, Wireshark |
+| Mac 1 | Private DNS server + test client | Harshita | 10.7.18.129 | dnsmasq, port 53 |
+| Mac 2 | Edge reverse proxy + load balancer (TLS) | Yashi | 10.7.31.128 | nginx, ports 80 / 443 |
+| Mac 3 | Backend A | Manan | 10.7.10.192 | Python REST API, port 3001 |
+| Mac 4 | Backend B + main test client | Akhil | 10.7.29.210 | Python REST API, port 3002, Wireshark |
 
 Network: 10.7.0.0/19 (mask 255.255.224.0), gateway 10.7.0.1.
 Domain: `team1.test` (`app.team1.test`, `api.team1.test` -> Mac 2).
@@ -25,7 +25,7 @@ Domain: `team1.test` (`app.team1.test`, `api.team1.test` -> Mac 2).
 ## Request flow
 
 ```
-Client (Mac 4) --DNS query, UDP 53--> Mac 1 (dnsmasq)   answer: 10.7.21.240
+Client (Mac 4) --DNS query, UDP 53--> Mac 1 (dnsmasq)   answer: 10.7.31.128
 Client (Mac 4) --HTTPS, TCP 443-----> Mac 2 (nginx, TLS terminates here)
                                         |--plain HTTP--> Mac 3  Backend A :3001
                                         |--plain HTTP--> Mac 4  Backend B :3002
@@ -80,7 +80,7 @@ tail -f /opt/homebrew/var/log/nginx/team1_access.log
 **Every client** - DNS points at Mac 1, and the Team 1 root CA is trusted:
 
 ```bash
-sudo networksetup -setdnsservers Wi-Fi 10.7.24.11
+sudo networksetup -setdnsservers Wi-Fi 10.7.18.129
 sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
 ```
 
@@ -89,7 +89,7 @@ sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
 | Script | Run on | Checks |
 | --- | --- | --- |
 | `scripts/verify-lan.sh` | any Mac | IP details + ping to all four Macs |
-| `scripts/verify-dns.sh` | client | Name resolves to 10.7.21.240 via 10.7.24.11 |
+| `scripts/verify-dns.sh` | client | Name resolves to 10.7.31.128 via 10.7.18.129 |
 | `scripts/verify-backends.sh` | Mac 2 | Both backends answer directly by IP |
 | `scripts/verify-edge.sh` | client | TLS validation, round-robin A/B, HTTP/1.1 and HTTP/2 |
 

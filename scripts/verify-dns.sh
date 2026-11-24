@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Run on a client Mac: checks that names resolve through Mac 1.
-DNS=10.7.24.11
+DNS=10.7.18.129
 echo "== Configured DNS servers =="
 networksetup -getdnsservers Wi-Fi
 echo
