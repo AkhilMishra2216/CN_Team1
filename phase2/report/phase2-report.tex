@@ -180,7 +180,7 @@ checks on the edge (Ext D) remove a failed backend from rotation.}\label{fig:p2}
 \end{figure*}
 
 \subsection{Ext A: backup DNS resolver}
-Mac 3 runs a second dnsmasq instance with the same records, local zone and
+Mac 3 runs a second dnsmasq instance with the same records and
 TTL as Mac 1. Clients list Mac 1 first and Mac 3 second, so the backup is
 consulted only when the primary does not answer.
 \begin{lstlisting}
