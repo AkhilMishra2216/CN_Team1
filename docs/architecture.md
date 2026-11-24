@@ -17,7 +17,7 @@ with no cloud.
 | Mac 1 (10.7.18.129) | Private DNS server + test client | dnsmasq, dig, curl | AWS Route 53 (managed DNS) |
 | Mac 2 (10.7.31.128) | Edge reverse proxy + load balancer, TLS termination | nginx, server certificate | AWS ALB / GCP Load Balancer / CDN edge |
 | Mac 3 (10.7.10.192) | Backend A | Python REST API, port 3001 | Application server instance (EC2) |
-| Mac 4 (10.7.29.210) | Backend B + main test client | Python REST API, port 3002, curl, Wireshark | Application server instance (EC2) |
+| Mac 4 (10.7.12.3) | Backend B + main test client | Python REST API, port 3002, curl, Wireshark | Application server instance (EC2) |
 
 Full addressing details: [ip-service-inventory.md](ip-service-inventory.md)
 
@@ -29,7 +29,7 @@ Full addressing details: [ip-service-inventory.md](ip-service-inventory.md)
 2. **TCP** - Mac 4 opens a TCP connection to `10.7.31.128:443`: SYN -> SYN-ACK -> ACK.
 3. **TLS** - ClientHello (SNI app.team1.test) -> ServerHello -> Certificate (signed by Team1 Local Root CA) -> key exchange -> Finished. Everything after this is encrypted.
 4. **HTTP** - the GET request travels inside TLS (HTTP/2 by default, HTTP/1.1 also supported).
-5. **Load balancing** - nginx decrypts the request and forwards it as plain HTTP to Backend A (10.7.10.192:3001) or Backend B (10.7.29.210:3002) in round-robin order.
+5. **Load balancing** - nginx decrypts the request and forwards it as plain HTTP to Backend A (10.7.10.192:3001) or Backend B (10.7.12.3:3002) in round-robin order.
 6. The backend replies with `X-Backend: A` or `B`; nginx returns it to the client over the same TLS connection.
 
 The client never learns the backend IP addresses. DNS only ever returns

@@ -17,7 +17,7 @@ project.
 | Mac 1 | Private DNS server + test client | Harshita | 10.7.18.129 | dnsmasq, port 53 |
 | Mac 2 | Edge reverse proxy + load balancer (TLS) | Yashi | 10.7.31.128 | nginx, ports 80 / 443 |
 | Mac 3 | Backend A | Manan | 10.7.10.192 | Python REST API, port 3001 |
-| Mac 4 | Backend B + main test client | Akhil | 10.7.29.210 | Python REST API, port 3002, Wireshark |
+| Mac 4 | Backend B + main test client | Akhil | 10.7.12.3 | Python REST API, port 3002, Wireshark |
 
 Network: 10.7.0.0/19 (mask 255.255.224.0), gateway 10.7.0.1.
 Domain: `team1.test` (`app.team1.test`, `api.team1.test` -> Mac 2).
