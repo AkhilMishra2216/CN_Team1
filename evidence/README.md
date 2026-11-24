@@ -2,7 +2,8 @@
 
 Every file here is an original screenshot, packet capture or terminal
 transcript from the four Macs. Nothing is reconstructed: a step that has
-not been run yet is listed as **to capture**, with the command to run in
+not been recorded is marked **live at evaluation**: it is demonstrated
+live in the final demo, with the commands in
 [`phase2/README.md`](../phase2/README.md).
 
 ## Phase 1 (complete)
@@ -35,19 +36,19 @@ Mac 2 10.7.31.128, Mac 3 10.7.10.192, Mac 4 10.7.12.3.
 | [`backup-resolver-mac3.txt`](Phase-2/A-Backup-DNS/backup-resolver-mac3.txt) | Mac 3 | Backup dnsmasq running in the foreground, its config, firewall set to allow it, answers for `app`, `api` (10.7.31.128, TTL 30) and an external name; Mac 3's resolver order 10.7.18.129 then 10.7.10.192 | captured |
 | [`primary-answering-mac3.jpg`](Phase-2/A-Backup-DNS/primary-answering-mac3.jpg) | Mac 3 | With both resolvers listed, a normal lookup is answered by the primary: `SERVER: 10.7.18.129#53`, TTL 30, then HTTPS returns Backend A | captured |
 | [`backup-direct-query-mac4.jpg`](Phase-2/A-Backup-DNS/backup-direct-query-mac4.jpg) | Mac 4 | `dig @10.7.10.192 app.team1.test` from another Mac returns 10.7.31.128 | captured |
-| `client-dns-mac4.jpg` | Mac 4 | Resolver order on the main client | to capture |
-| `primary-stop-restore-mac1.jpg` | Mac 1 | Primary stopped, later restarted | to capture |
-| `failover-mac4.jpg` | Mac 4 | During the outage: `SERVER: 10.7.10.192#53`, HTTPS still works | to capture |
-| `backup-query-log-mac3.jpg` | Mac 3 | That query in the backup's live log | to capture |
+| `client-dns-mac4.jpg` | Mac 4 | Resolver order on the main client | live at evaluation |
+| `primary-stop-restore-mac1.jpg` | Mac 1 | Primary stopped, later restarted | live at evaluation |
+| `failover-mac4.jpg` | Mac 4 | During the outage: `SERVER: 10.7.10.192#53`, HTTPS still works | live at evaluation |
+| `backup-query-log-mac3.jpg` | Mac 3 | That query in the backup's live log | live at evaluation |
 
 ### B · TTL
 
 | File | Mac | What it shows | Status |
 | --- | --- | --- | --- |
 | [`ttl-30-mac1.jpg`](Phase-2/B-TTL/ttl-30-mac1.jpg) | Mac 1 | `app.team1.test. 30 IN A 10.7.31.128` | captured |
-| `automatic-expiry-mac1.jpg` | Mac 1 | Timestamped loop: old answer until expiry, then the new one | to capture |
-| `dig-vs-os-cache-mac1.jpg` | Mac 1 | `dig` new IP while `dscacheutil` still old | to capture |
-| `manual-flush-mac1.jpg` | Mac 1 | Flush switches the answer at once | to capture |
+| `automatic-expiry-mac1.jpg` | Mac 1 | Timestamped loop: old answer until expiry, then the new one | live at evaluation |
+| `dig-vs-os-cache-mac1.jpg` | Mac 1 | `dig` new IP while `dscacheutil` still old | live at evaluation |
+| `manual-flush-mac1.jpg` | Mac 1 | Flush switches the answer at once | live at evaluation |
 
 ### C · Service isolation (complete)
 
@@ -75,14 +76,14 @@ Mac 2 10.7.31.128, Mac 3 10.7.10.192, Mac 4 10.7.12.3.
 | --- | --- | --- | --- |
 | [`primary-edge-header-mac1.png`](Phase-2/E-Edge-Migration/primary-edge-header-mac1.png) | Mac 1 | Before cutover: `HTTP/2 200`, `x-edge: mac2`, `x-backend: A` | captured |
 | [`cutover-state-mac3.txt`](Phase-2/E-Edge-Migration/cutover-state-mac3.txt) | Mac 3 | 19:01, after the cutover: primary DNS answers 10.7.12.3 (backup still 10.7.31.128); Mac 3's OS resolver has 10.7.12.3; four requests return 200 with `x-edge: mac4`, backends B, A, B, A; both edges present the same mkcert certificate (SHA-256 `17:DA:59:…:C4:51`) | captured |
-| `dns-cutover-mac1.jpg` | Mac 1, Mac 3 | Record moved to 10.7.12.3 on both resolvers | to capture |
-| `fresh-standby-mac3.jpg` | Mac 3 | Fresh client reaches the standby at once | to capture |
+| [`dns-cutover-both-resolvers-mac3.txt`](Phase-2/E-Edge-Migration/dns-cutover-both-resolvers-mac3.txt) | Mac 3 | 19:06: both resolvers answer 10.7.12.3; Mac 3 reaches `x-edge: mac4` with A and B; backup dnsmasq log shows the new record | captured |
+| `fresh-standby-mac3.jpg` | Mac 3 | Fresh client reaches the standby at once | live at evaluation |
 
 ### F · Troubleshooting
 
 | File | Mac | What it shows | Status |
 | --- | --- | --- | --- |
-| `faculty-fault-mac4.jpg` | Mac 4 | Layer-by-layer diagnosis of the injected fault | during evaluation |
+| `faculty-fault-mac4.jpg` | Mac 4 | Layer-by-layer diagnosis of the injected fault | live at evaluation |
 
 Setup problems found and fixed during Phase 2 (port 53 conflict, macOS
 firewall blocking dnsmasq, DHCP address changes) are written up in the

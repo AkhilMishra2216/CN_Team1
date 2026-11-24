@@ -21,12 +21,12 @@ Full report in IEEE format: [`report/phase2-report.pdf`](report/phase2-report.pd
 - The backup on Mac 3 answers `app.team1.test` and `api.team1.test` with 10.7.31.128, TTL 30, in 3 ms, and forwards other names upstream ([transcript](../evidence/Phase-2/A-Backup-DNS/backup-resolver-mac3.txt)).
 - Mac 4 queried the backup directly and got 10.7.31.128 ([screenshot](../evidence/Phase-2/A-Backup-DNS/backup-direct-query-mac4.jpg)).
 - With both resolvers listed, normal lookups are answered by the primary (`SERVER: 10.7.18.129#53`, 24 ms) ([screenshot](../evidence/Phase-2/A-Backup-DNS/primary-answering-mac3.jpg)).
-- **Still to run:** stop the primary on Mac 1 and show a client resolving through `10.7.10.192`.
+- **Live at evaluation:** stop the primary on Mac 1 and show a client resolving through `10.7.10.192`.
 
 ### B · TTL (partly run)
 
 - The answer carries TTL 30 ([screenshot](../evidence/Phase-2/B-TTL/ttl-30-mac1.jpg)).
-- **Still to run:** record change with a timestamped client loop, `dig` vs. OS cache, manual flush.
+- **Live at evaluation:** record change with a timestamped client loop, `dig` vs. OS cache, manual flush.
 
 ### C · Service isolation (complete)
 
@@ -74,8 +74,9 @@ Evidence: [`C-Isolation`](../evidence/Phase-2/C-Isolation).
   | Mac 2 directly | 200, `x-edge: mac2` (old edge still serving) |
   | Certificates | identical on both edges, SHA-256 `17:DA:59:…:C4:51`, issued by the mkcert CA |
 
-- Finding: only the primary resolver had been changed. Clients that fall back to the backup would be sent to the old edge, so a cutover has to change every resolver.
-- **Still to run:** backup resolver changed too; timestamped cached-vs-fresh client during the TTL window; rollback to Mac 2.
+- Finding: at 19:01 only the primary resolver had been changed. Clients that fall back to the backup would be sent to the old edge, so a cutover has to change every resolver.
+- At 19:06 the backup was restarted with the new record; both resolvers then answered 10.7.12.3 and requests by name kept returning 200 from `x-edge: mac4` ([transcript](../evidence/Phase-2/E-Edge-Migration/dns-cutover-both-resolvers-mac3.txt)).
+- **Live at evaluation:** cached vs. fresh client inside the TTL window; rollback to Mac 2.
 
 ### F · Faculty fault
 

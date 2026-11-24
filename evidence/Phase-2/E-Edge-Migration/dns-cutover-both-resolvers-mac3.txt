@@ -1,0 +1,43 @@
+Mac 3 (Manan, 10.7.10.192) - Phase 2 Ext E: DNS cutover on BOTH resolvers
+Captured Tue 24 Nov 2026 19:06:15 IST on Mac 3, after the backup resolver was restarted with the new record
+
+[19:06:15] manangilhotra010@Manans-MacBook-Pro-2 ~ % grep host-record /opt/homebrew/etc/dnsmasq.conf
+host-record=app.team1.test,10.7.12.3
+host-record=api.team1.test,10.7.31.128
+
+[19:06:15] manangilhotra010@Manans-MacBook-Pro-2 ~ % dig @10.7.18.129 app.team1.test +noall +answer +nocmd
+
+; <<>> DiG 9.10.6 <<>> @10.7.18.129 app.team1.test +noall +answer +nocmd
+; (1 server found)
+;; global options: +cmd
+app.team1.test.		30	IN	A	10.7.12.3
+
+[19:06:15] manangilhotra010@Manans-MacBook-Pro-2 ~ % dig @10.7.10.192 app.team1.test +noall +answer +nocmd
+
+; <<>> DiG 9.10.6 <<>> @10.7.10.192 app.team1.test +noall +answer +nocmd
+; (1 server found)
+;; global options: +cmd
+app.team1.test.		30	IN	A	10.7.12.3
+
+[19:06:15] manangilhotra010@Manans-MacBook-Pro-2 ~ % dscacheutil -q host -a name app.team1.test | grep ip_address
+ip_address: 10.7.12.3
+
+[19:06:15] manangilhotra010@Manans-MacBook-Pro-2 ~ % curl -sI --cacert ~/cn/rootCA.pem https://app.team1.test/api/status | grep -iE '^HTTP|x-backend|x-edge'
+HTTP/2 200 
+x-backend: A
+x-edge: mac4
+
+[19:06:15] manangilhotra010@Manans-MacBook-Pro-2 ~ % curl -sI --cacert ~/cn/rootCA.pem https://app.team1.test/api/status | grep -iE '^HTTP|x-backend|x-edge'
+HTTP/2 200 
+x-backend: B
+x-edge: mac4
+
+--- Backup dnsmasq terminal on Mac 3 (excerpt from the start of the restarted instance) ---
+dnsmasq: started, version 2.93 cachesize 150
+dnsmasq: using nameserver 8.8.8.8#53
+dnsmasq: using nameserver 1.1.1.1#53
+dnsmasq: read /etc/hosts - 3 names
+dnsmasq: query[A] app.team1.test from 10.7.10.192
+dnsmasq: config app.team1.test is 10.7.12.3
+dnsmasq: query[A] app.team1.test from 10.7.10.192
+dnsmasq: config app.team1.test is 10.7.12.3

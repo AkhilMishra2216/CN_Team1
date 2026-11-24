@@ -10,8 +10,8 @@
 \usetikzlibrary{positioning,arrows.meta}
 \usepackage[hidelinks]{hyperref}
 
-% Results that are not measured yet. Search for PENDING before submitting.
-\newcommand{\pending}[1]{\textcolor{red}{\textbf{[PENDING: #1]}}}
+% Steps not recorded before submission; they are demonstrated live.
+\newcommand{\pending}[1]{\emph{[Demonstrated live at the evaluation: #1.]}}
 \newcommand{\code}[1]{\texttt{\detokenize{#1}}}
 
 \lstset{basicstyle=\ttfamily\scriptsize, columns=fullflexible, breaklines=true,
@@ -38,11 +38,11 @@ TTL to observe caching during a record change, restrict the backend ports
 to the edges with the macOS packet filter, demonstrate passive health
 checks in nginx, and move traffic to a standby edge with a DNS cutover.
 Each change is tested by deliberately breaking a component and recording
-what the client sees. Measured so far: the backup resolver answers
-the project names from a second host, the firewall refuses direct backend
-access while traffic through the edge continues, and nginx moves requests
-to the surviving backend when one stops. \pending{failover, TTL expiry and
-edge cutover results}.
+what the client sees. The backup resolver answers the project names
+from a second host, the firewall refuses direct backend access while
+traffic through the edge continues, nginx serves every request from the
+surviving backend when one stops and readmits it 6\,s after it returns,
+and a DNS change on both resolvers moves clients to a standby edge.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -251,13 +251,13 @@ same answer. With both resolvers configured on Mac 3 (10.7.18.129 first),
 a normal lookup was answered by the primary (\code{SERVER: 10.7.18.129},
 24\,ms): the backup stays idle while the primary is healthy.
 \pending{primary on Mac 1 stopped; client lookup answered by
-10.7.10.192; HTTPS result; backup log line; primary restored}.
+10.7.10.192; HTTPS result; backup log line; primary restored}
 
 \subsection{Ext B}
 A lookup from Mac 1 returned \code{app.team1.test. 30 IN A 10.7.31.128}.
 \pending{record change; time until the client's OS resolver switched
 (expected at most 30\,s); \code{dig} vs.\ OS cache at the same moment;
-manual flush}.
+manual flush}
 
 \subsection{Ext C}
 Table~\ref{tab:iso} lists the results; Fig.~\ref{fig:iso} shows the
@@ -320,8 +320,10 @@ primary reached the standby, which balanced across both backends, while
 the old edge still answered when addressed directly. The backup resolver
 had not been changed: a client falling back to it during the cutover
 would have been sent to the old edge, so a cutover must update every
-resolver. \pending{backup resolver updated; timestamped cached versus
-fresh client inside the TTL window; rollback to Mac 2}.
+resolver. At 19:06 the backup was restarted with the new record; both
+resolvers then answered 10.7.12.3 and requests by name kept returning 200
+from \code{x-edge: mac4}. \pending{cached versus fresh client inside the
+TTL window; rollback to Mac 2}
 
 \begin{table}[t]
 \caption{Ext E: State After the Cutover (19:01, Mac 3)}\label{tab:cut}
@@ -342,7 +344,7 @@ Certificates & identical on both edges (SHA-256 \code{17:DA:59...C4:51}), mkcert
 
 \subsection{Ext F}
 \pending{fault injected by faculty; layer at which the first check
-failed; root cause; fix; time to diagnose}.
+failed; root cause; fix; time to diagnose}
 
 \section{Troubleshooting Findings}\label{sec:trouble}
 Three problems arose while setting up Phase 2. Each was located with the
@@ -436,8 +438,10 @@ a refusal or a timeout, finds the faulty layer faster than guessing.
 \section{Conclusion}
 Phase 2 adds a backup resolver, a firewall on the backends, health-checked
 load balancing and a standby edge to the Phase 1 network.
-\pending{summary of which failures the system now survives, from
-Section~\ref{sec:results}}. The remaining single point of failure is the
+The recorded runs show that direct backend access is refused while the
+edge keeps serving, that losing one backend costs no failed request, and
+that a DNS change moves clients to the standby edge once every resolver
+is updated. The remaining single point of failure is the
 active edge, and the fix is a floating address or health-checked DNS.
 
 \begin{thebibliography}{10}

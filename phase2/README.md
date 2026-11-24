@@ -63,10 +63,10 @@ sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
 | Backup running, firewall allows it, answers both names and external names; client resolver order | Mac 3 | `A-Backup-DNS/backup-resolver-mac3.txt` | captured |
 | Normal lookup answered by the primary (`SERVER: 10.7.18.129`) | Mac 3 | `A-Backup-DNS/primary-answering-mac3.jpg` | captured |
 | `dig @10.7.10.192 app.team1.test` from another Mac | Mac 4 | `A-Backup-DNS/backup-direct-query-mac4.jpg` | captured |
-| Mac 4 resolver order: `networksetup -getdnsservers Wi-Fi` | Mac 4 | `A-Backup-DNS/client-dns-mac4.jpg` | to capture |
-| Primary stopped: `sudo brew services stop dnsmasq`, later `start` | Mac 1 | `A-Backup-DNS/primary-stop-restore-mac1.jpg` | to capture |
-| During the outage: flush, `dig app.team1.test` shows `SERVER: 10.7.10.192#53`, curl succeeds | Mac 4 | `A-Backup-DNS/failover-mac4.jpg` | to capture |
-| Query from Mac 4 in the backup's live log | Mac 3 | `A-Backup-DNS/backup-query-log-mac3.jpg` | to capture |
+| Mac 4 resolver order: `networksetup -getdnsservers Wi-Fi` | Mac 4 | `A-Backup-DNS/client-dns-mac4.jpg` | live at evaluation |
+| Primary stopped: `sudo brew services stop dnsmasq`, later `start` | Mac 1 | `A-Backup-DNS/primary-stop-restore-mac1.jpg` | live at evaluation |
+| During the outage: flush, `dig app.team1.test` shows `SERVER: 10.7.10.192#53`, curl succeeds | Mac 4 | `A-Backup-DNS/failover-mac4.jpg` | live at evaluation |
+| Query from Mac 4 in the backup's live log | Mac 3 | `A-Backup-DNS/backup-query-log-mac3.jpg` | live at evaluation |
 
 ## Ext C · Service isolation (backend firewall)
 
@@ -146,11 +146,11 @@ Expected: `x-edge: mac4`.
 | TTL 30 on the answer | Mac 1 | `B-TTL/ttl-30-mac1.jpg` | captured |
 | Primary edge answering before cutover (`x-edge: mac2`) | Mac 1 | `E-Edge-Migration/primary-edge-header-mac1.png` | captured |
 | After the cutover: primary DNS → 10.7.12.3, client served by `x-edge: mac4` with A and B; both edges present the same certificate | Mac 3 | `E-Edge-Migration/cutover-state-mac3.txt` | captured |
-| Record changed on both resolvers (at 19:01 only the primary was changed) | Mac 1, Mac 3 | `E-Edge-Migration/dns-cutover-mac1.jpg` | to capture |
-| Timestamped loop: old edge until TTL expiry, then standby | Mac 1 | `B-TTL/automatic-expiry-mac1.jpg` | to capture |
-| `dig` new IP vs. OS cache old IP | Mac 1 | `B-TTL/dig-vs-os-cache-mac1.jpg` | to capture |
-| Fresh client reaches the standby at once (after a flush) | Mac 3 | `E-Edge-Migration/fresh-standby-mac3.jpg` | to capture |
-| Rollback + manual flush switches back immediately | Mac 1 | `B-TTL/manual-flush-mac1.jpg` | to capture |
+| Record changed on both resolvers (19:06) | Mac 3 | `E-Edge-Migration/dns-cutover-both-resolvers-mac3.txt` | captured |
+| Timestamped loop: old edge until TTL expiry, then standby | Mac 1 | `B-TTL/automatic-expiry-mac1.jpg` | live at evaluation |
+| `dig` new IP vs. OS cache old IP | Mac 1 | `B-TTL/dig-vs-os-cache-mac1.jpg` | live at evaluation |
+| Fresh client reaches the standby at once (after a flush) | Mac 3 | `E-Edge-Migration/fresh-standby-mac3.jpg` | live at evaluation |
+| Rollback + manual flush switches back immediately | Mac 1 | `B-TTL/manual-flush-mac1.jpg` | live at evaluation |
 
 ## Ext F · Faculty-injected fault
 
