@@ -6,4 +6,4 @@
 | `C2_backend_a_on_mac3.png` | Backend A running on Mac 3, port 3001, `X-Backend: A`, `Cache-Control: no-store` |
 | `C3_backend_b_on_mac4.png` | Backend B running on Mac 4, port 3002, `X-Backend: B` |
 
-Source code: [../../backend/server.py](../../backend/server.py)
+Source code: [../../../phase1/backend/server.py](../../../phase1/backend/server.py)

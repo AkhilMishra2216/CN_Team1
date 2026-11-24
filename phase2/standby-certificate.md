@@ -24,7 +24,7 @@ cd ~/team1-certs
 openssl x509 -req -in ~/Downloads/standby.app.team1.test.csr \
   -CA team1-rootCA.pem -CAkey team1-rootCA.key -CAcreateserial \
   -out standby.app.team1.test.crt -days 365 -sha256 \
-  -extfile openssl-san.cnf
+  -extfile openssl-san.cnf      # phase1/tls/openssl-san.cnf in this repo
 openssl verify -CAfile team1-rootCA.pem standby.app.team1.test.crt
 # standby.app.team1.test.crt: OK
 ```

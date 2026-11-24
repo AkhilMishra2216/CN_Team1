@@ -9,4 +9,4 @@
 
 Round-robin from Mac 1 is also visible at the top of `../02_DNS/B2_dnsmasq_conf.png`.
 
-Configuration: [../../nginx/nginx.conf](../../nginx/nginx.conf)
+Configuration: [../../../phase1/nginx/nginx.conf](../../../phase1/nginx/nginx.conf)

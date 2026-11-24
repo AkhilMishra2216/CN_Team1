@@ -10,4 +10,4 @@
 
 No validation is skipped anywhere: curl uses `--cacert` with our root CA, never `-k`.
 
-Setup steps: [../../tls/certificate-setup.md](../../tls/certificate-setup.md)
+Setup steps: [../../../phase1/tls/certificate-setup.md](../../../phase1/tls/certificate-setup.md)

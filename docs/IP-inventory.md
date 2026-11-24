@@ -30,8 +30,8 @@ sessions. The Phase 1 evidence (screenshots and captures under
 | Mac 3 | 10.7.22.147 | 10.7.10.192 |
 | Mac 4 | 10.7.19.69 | 10.7.12.3 |
 
-When the addresses change, only `dns/team-dnsmasq.conf`, `nginx/nginx.conf`
-and `scripts/*.sh` need the new values. The TLS certificate stays the same,
+When the addresses change, only `phase1/dns/team-dnsmasq.conf`, `phase1/nginx/nginx.conf`
+and the scripts in `phase1/scripts/` and `phase2/` need the new values. The TLS certificate stays the same,
 because it names `app.team1.test` and `api.team1.test`, not IP addresses.
 
 ## Services and ports
