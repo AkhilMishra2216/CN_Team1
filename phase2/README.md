@@ -26,10 +26,18 @@ dnsmasq on Mac 1). Run order: **A → C → D → E setup → B + E → F**.
 | `standby-certificate.md` | Standby certificate: key on Mac 3, signed by the team CA on Mac 2 |
 | `scripts/lb-loop.sh` | Client loop: status code and backend once per second (Ext D) |
 | `scripts/watch-edge.sh` | Client loop: resolver answer and answering edge every 3 s (Ext B, E) |
+| `scripts/capture.sh` | Runs one test step and saves its real output with timestamps |
 | `REPORT.md`, `report/` | Results summary and the IEEE-format report |
 
 Run commands from the repository root. On clients, `--cacert` points at
 the team root CA (real validation, never `-k`).
+
+## Capturing evidence
+
+`scripts/capture.sh <step>` runs one test step and saves exactly what the
+terminal printed, with the Mac, its IP and timestamps, to
+`~/cn/evidence/<step>-<mac>.txt`. Copy those files into the matching
+`evidence/Phase-2/` folder. `./phase2/scripts/capture.sh help` lists the steps.
 
 ## Ext A · Backup DNS resolver
 
