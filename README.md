@@ -11,7 +11,7 @@ stays simple; the network is the project.
 | Phase | Focus | Status |
 | --- | --- | --- |
 | [Phase 1 · Build & Observe](phase1/README.md) | DNS, HTTP(S), TCP, TLS, load balancing, caching, packet analysis | Complete |
-| [Phase 2 · Harden & Recover](phase2/README.md) | Backup DNS, TTL, service isolation, HA failover, edge migration, fault diagnosis | In progress: C complete; A, B, D, E partly; F at evaluation |
+| [Phase 2 · Harden & Recover](phase2/README.md) | Backup DNS, TTL, service isolation, HA failover, edge migration, fault diagnosis | In progress: C and D complete; A, B, E partly; F at evaluation |
 
 ---
 
@@ -100,7 +100,7 @@ done. Results and evidence links: [`phase1/README.md`](phase1/README.md#results-
 | A · Backup DNS | Second resolver on Mac 3; clients list Mac 1, then Mac 3 | [`backup-dnsmasq.conf`](phase2/config/backup-dnsmasq.conf) | [`A-Backup-DNS`](evidence/Phase-2/A-Backup-DNS) | Backup answering; failover still to run |
 | B · TTL | 30 s TTL observed through a record change | [`team-dnsmasq.conf`](phase1/dns/team-dnsmasq.conf) | [`B-TTL`](evidence/Phase-2/B-TTL) | TTL shown; change + flush still to run |
 | C · Isolation | Only the edge may reach ports 3001/3002 | [`pf-backend.conf`](phase2/config/pf-backend.conf) | [`C-Isolation`](evidence/Phase-2/C-Isolation) | Complete, including rollback |
-| D · Backend failover | nginx passive health checks + retry | [`nginx.conf`](phase1/nginx/nginx.conf) | [`D-Backend-Failover`](evidence/Phase-2/D-Backend-Failover) | Failover shown; recovery still to run |
+| D · Backend failover | nginx passive health checks + retry | [`nginx.conf`](phase1/nginx/nginx.conf) | [`D-Backend-Failover`](evidence/Phase-2/D-Backend-Failover) | Complete |
 | E · Edge migration | Standby nginx on Mac 3 + DNS cutover | [`standby-edge.conf`](phase2/config/standby-edge.conf) | [`E-Edge-Migration`](evidence/Phase-2/E-Edge-Migration) | Baseline only; cutover still to run |
 | F · Troubleshooting | Layered diagnosis of a faculty-injected fault | [runbook](phase2/README.md#ext-f--faculty-injected-fault) | [`F-Troubleshooting`](evidence/Phase-2/F-Troubleshooting) | At evaluation |
 

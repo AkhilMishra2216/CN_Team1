@@ -1,0 +1,60 @@
+Mac 3 (Manan, 10.7.10.192) - Phase 2 Ext D: backend failover through the primary edge
+Captured Tue 24 Nov 2026 18:58:59 IST on Mac 3. Requests are sent to Mac 2 (10.7.31.128) with
+--resolve, because app.team1.test was cut over to the Mac 4 standby for Ext E at the time.
+Each request line: manangilhotra010@Manans-MacBook-Pro-2 ~ % curl -sS -i --resolve app.team1.test:443:10.7.31.128 --cacert ~/cn/rootCA.pem https://app.team1.test/api/status
+
+== 1. Baseline: both backends up
+[18:58:59] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:00] HTTP/2 200  x-backend: A x-edge: mac2 
+[18:59:01] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:02] HTTP/2 200  x-backend: A x-edge: mac2 
+[18:59:02] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:03] HTTP/2 200  x-backend: A x-edge: mac2 
+[18:59:04] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:04] HTTP/2 200  x-backend: A x-edge: mac2 
+
+== 2. Stop Backend A on Mac 3
+[18:59:05] manangilhotra010@Manans-MacBook-Pro-2 ~ % pgrep -fl 'server.py A 3001'
+35012 /opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python /Users/manangilhotra010/cn/server.py A 3001
+[18:59:05] manangilhotra010@Manans-MacBook-Pro-2 ~ % kill 35012
+[18:59:06] manangilhotra010@Manans-MacBook-Pro-2 ~ % curl -sS --max-time 3 http://10.7.10.192:3001/api/status
+curl: (7) Failed to connect to 10.7.10.192 port 3001 after 4 ms: Couldn't connect to server
+
+== 3. Backend A down
+[18:59:06] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:08] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:08] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:09] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:10] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:10] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:11] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:12] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:13] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:14] HTTP/2 200  x-backend: B x-edge: mac2 
+
+== 4. Restart Backend A
+[18:59:14] manangilhotra010@Manans-MacBook-Pro-2 ~ % python3 ~/cn/server.py A 3001
+(eval):disown:18: no current job
+Backend A listening on 0.0.0.0:3001
+[18:59:15] manangilhotra010@Manans-MacBook-Pro-2 ~ % curl -sS --max-time 3 http://10.7.10.192:3001/api/status
+{"backend": "A", "status": "ok"}
+
+== 5. Recovery: one request per second
+[18:59:16] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:17] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:18] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:19] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:20] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:21] HTTP/2 200  x-backend: A x-edge: mac2 
+[18:59:23] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:24] HTTP/2 200  x-backend: A x-edge: mac2 
+[18:59:25] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:27] HTTP/2 200  x-backend: A x-edge: mac2 
+[18:59:28] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:29] HTTP/2 200  x-backend: A x-edge: mac2 
+[18:59:30] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:32] HTTP/2 200  x-backend: A x-edge: mac2 
+[18:59:33] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:35] HTTP/2 200  x-backend: A x-edge: mac2 
+[18:59:36] HTTP/2 200  x-backend: B x-edge: mac2 
+[18:59:37] HTTP/2 200  x-backend: A x-edge: mac2 

@@ -109,7 +109,7 @@ Backend A tab, later `./phase1/backend/run-backend-a.sh`. **Mac 2**:
 | --- | --- | --- | --- |
 | A and B alternate, then only B after Backend A stops | Mac 4 | `D-Backend-Failover/backend-a-down-mac4.jpg` | captured |
 | nginx logs `connect() failed (61: Connection refused)` for upstream 10.7.10.192:3001 | Mac 2 | `D-Backend-Failover/nginx-error-log-mac2.jpg` | captured |
-| A restarted, A and B alternate again (allow 10 s) | Mac 4 | `D-Backend-Failover/backend-a-recovered-mac4.jpg` | to capture |
+| Full run: baseline, A stopped (10/10 served by B), A restarted and back in rotation | Mac 3 | `D-Backend-Failover/failover-and-recovery-mac3.txt` | captured |
 
 ## Ext E setup · Standby edge on Mac 3
 

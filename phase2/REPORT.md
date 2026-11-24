@@ -43,11 +43,21 @@ anchor `com.apple/cnproject`. Rollback flushed the anchor and disabled pf, and
 `diff` showed `/etc/pf.conf` unchanged on both Macs.
 Evidence: [`C-Isolation`](../evidence/Phase-2/C-Isolation).
 
-### D · Backend failover (partly run)
+### D · Backend failover (complete)
 
 - A client loop on Mac 4 showed A and B alternating, then only B after Backend A was stopped ([screenshot](../evidence/Phase-2/D-Backend-Failover/backend-a-down-mac4.jpg)).
 - At 18:26:14 nginx logged `connect() failed (61: Connection refused) while connecting to upstream` for `http://10.7.10.192:3001`, request from 10.7.12.3. That request was then served by B ([screenshot](../evidence/Phase-2/D-Backend-Failover/nginx-error-log-mac2.jpg)).
-- **Still to run:** restart Backend A and show it back in rotation.
+- A second, fully timestamped run from Mac 3 through Mac 2 ([transcript](../evidence/Phase-2/D-Backend-Failover/failover-and-recovery-mac3.txt)):
+
+  | Phase | Time | Requests | Result |
+  | --- | --- | --- | --- |
+  | Baseline | 18:58:59 to 18:59:04 | 8 | 200, alternating B, A |
+  | Backend A killed | 18:59:05 | | direct `10.7.10.192:3001` refused |
+  | Outage | 18:59:06 to 18:59:14 | 10 | 10 × 200, all from B, no errors |
+  | A restarted | 18:59:15 | | A answers directly |
+  | Recovery | 18:59:16 to 18:59:37 | 18 | B only until 18:59:20; A back at 18:59:21, then alternating |
+
+  A rejoined 6 s after its restart, within the 10 s `fail_timeout`: nginx retries a failed upstream only after that window.
 
 ### E · Edge migration (not run yet)
 

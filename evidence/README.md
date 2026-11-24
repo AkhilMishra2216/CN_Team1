@@ -67,7 +67,7 @@ Mac 2 10.7.31.128, Mac 3 10.7.10.192, Mac 4 10.7.12.3.
 | --- | --- | --- | --- |
 | [`backend-a-down-mac4.jpg`](Phase-2/D-Backend-Failover/backend-a-down-mac4.jpg) | Mac 4 | Request loop: A and B alternate, then only B after Backend A is stopped | captured |
 | [`nginx-error-log-mac2.jpg`](Phase-2/D-Backend-Failover/nginx-error-log-mac2.jpg) | Mac 2 | 18:26:14 `connect() failed (61: Connection refused)` to upstream 10.7.10.192:3001 for a request from 10.7.12.3 | captured |
-| `backend-a-recovered-mac4.jpg` | Mac 4 | A back in rotation after restart | to capture |
+| [`failover-and-recovery-mac3.txt`](Phase-2/D-Backend-Failover/failover-and-recovery-mac3.txt) | Mac 3 | Full run through Mac 2, timestamped: baseline A/B, Backend A killed, 10/10 requests 200 from B, A restarted at 18:59:15 and back in rotation at 18:59:21 | captured |
 
 ### E · Edge migration
 

@@ -304,7 +304,12 @@ client: 10.7.12.3, server: app.team1.test,
 request: "GET /api/status HTTP/2.0",
 upstream: "http://10.7.10.192:3001/api/status"
 \end{lstlisting}
-\pending{Backend A restarted; time until it re-entered rotation}.
+A second, timestamped run from Mac 3 sent requests straight to Mac 2.
+Eight baseline requests alternated between B and A. Backend A was killed
+at 18:59:05; the next ten requests (18:59:06--18:59:14) all returned 200
+from B. Backend A was restarted at 18:59:15 and served its first request
+again at 18:59:21, 6\,s later, within the 10\,s \code{fail_timeout} after
+which nginx retries a failed upstream; from then on A and B alternated.
 
 \subsection{Ext E}
 Before the cutover, responses on Mac 1 carry \code{x-edge: mac2} with
